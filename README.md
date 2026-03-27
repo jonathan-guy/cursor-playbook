@@ -164,6 +164,50 @@ Nightwatch Step 5 reads agent transcripts, finds recurring errors, and proposes 
 
 ---
 
+## Research-Plan-Implement (RPI) Framework
+
+A structured methodology for AI-assisted development. The full 600-line playbook is at [`frameworks/rpi/PLAYBOOK.md`](frameworks/rpi/PLAYBOOK.md) with a reusable plan template at [`frameworks/rpi/PLAN-TEMPLATE.md`](frameworks/rpi/PLAN-TEMPLATE.md).
+
+### The 8 Slash Commands
+
+| # | Command | Purpose |
+|---|---------|---------|
+| 1 | `/1_research_codebase` | Deep-dive investigation — spawns parallel agents, saves to `thoughts/shared/research/` |
+| 2 | `/2_create_plan` | Interactive planning — generates phased approach with checkboxes |
+| 3 | `/3_validate_plan` | Verify implementation matches plan |
+| 4 | `/4_implement_plan` | Execute plan phase-by-phase, updating checkboxes as you go |
+| 5 | `/5_save_progress` | Save session context for later resumption |
+| 6 | `/6_resume_work` | Resume from a saved session |
+| 7 | `/7_research_cloud` | Read-only cloud infrastructure analysis |
+| 8 | `/8_define_test_cases` | Design acceptance tests using comment-first DSL approach |
+
+### Key Ideas
+
+- **Research before coding.** Even if you think you know the codebase, run `/1_research_codebase` first. Research docs become valuable references.
+- **Plans as specs.** Plans with checkboxes serve as both technical spec and progress tracker.
+- **Session persistence via markdown.** `thoughts/shared/` accumulates research, plans, and session state as plain markdown files — no database, no special tooling.
+- **Parallel agents for research.** A single research query spawns locator, analyzer, and pattern-finder agents simultaneously.
+- **Test-first via `/8_define_test_cases`.** Design test cases as comments before writing any implementation code.
+
+---
+
+## Shared Skill Libraries via Symlinks
+
+Skills can come from a shared library (e.g., a team agent-skills repo) and be symlinked into `~/.cursor/skills/`:
+
+```
+~/.cursor/skills/
+  questions/SKILL.md        # personal — lives here directly
+  whisper/SKILL.md          # personal — lives here directly
+  gdrive -> ~/.agents/skills/gdrive     # symlink to shared library
+  blockcell -> ~/.agents/skills/blockcell
+  go-link -> ~/.agents/skills/go-link
+```
+
+This pattern lets you mix personal skills with team-provided ones, and update the shared library independently (e.g., `git pull` in `~/.agents/skills/`).
+
+---
+
 ## Patterns Worth Remembering
 
 1. **Glob-scoped rules as "just-in-time" context** — Scope domain knowledge to the files where it's needed instead of stuffing everything into one giant system prompt.
@@ -191,6 +235,11 @@ Nightwatch Step 5 reads agent transcripts, finds recurring errors, and proposes 
 ## File Index
 
 ```
+frameworks/                            # Reusable development methodology
+  rpi/
+    PLAYBOOK.md                        # Research-Plan-Implement framework (600 lines)
+    PLAN-TEMPLATE.md                   # Reusable implementation plan template
+
 personal/                              # ~/.cursor/ config (cross-project)
   rules/
     plan-mode-confirmations.mdc        # Bold orange "ready?" styling
