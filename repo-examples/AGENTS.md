@@ -38,6 +38,29 @@ Prefer a single focused question over a wall of options. If you need to ask mult
 - **Before compaction**: `bd sync` saves work to git.
 - **On session end**: Run quality gates, commit, push, `bd sync`. Work is NOT complete until `git push` succeeds.
 
+## Nightagent Scouting
+
+Throughout every session, actively look for work that the nightagent autonomous builder could pick up overnight. This is a continuous background habit, not a one-time task.
+
+**When to scout:**
+- After completing a task that reveals follow-on work (e.g., "we should also do X but it's not urgent").
+- When the user mentions something they want but deprioritizes for now.
+- When you notice a pattern that could be improved (e.g., repeated boilerplate, inconsistent formatting across reports).
+- When a bug or edge case surfaces that doesn't block current work but should be fixed.
+
+**What makes a good nightagent candidate:**
+- Self-contained: touches 1-3 files, no external API calls or credentials needed.
+- Clear acceptance criteria: you can describe what "done" looks like in 1-2 sentences.
+- No product/design judgment required: the implementation is mechanical once specified.
+- Examples: CSS/styling fixes, adding a toggle, wiring existing data into a new view, renaming strings, adding validation checks.
+
+**What to do when you spot one:**
+1. Mention it briefly to the user: "This would be a good nightagent candidate."
+2. If the user agrees, add it to the roadmap backlog (`thoughts/shared/plans/003_dashboard_roadmap.md`) with the `[nightagent-ready]` tag and an inline implementation spec in a blockquote (file paths, code changes, acceptance criteria).
+3. If the user doesn't engage, just note it and move on — don't interrupt flow.
+
+**The `[nightagent-ready]` tag** tells the nightagent and the afternoon briefing (`/nightagent-brief`) that an item has a pre-written spec and should be prioritized regardless of tier. The spec blockquote must include: target file(s), what to change, and acceptance criteria.
+
 ## Slash Commands
 
 ### RPI Workflow
@@ -100,6 +123,21 @@ reports/               → Graduated deep-dive reports (each has its own generat
   <name>/output/       → Generated HTML + data.json (gitignored)
 
 scripts/               → Ad-hoc analysis scripts (may graduate to reports/)
+  nightshift.py        → NightShift orchestrator (overnight, evening, wednesday-extras modes)
+  nightshift_trigger.py → Creates BuilderBot tasks via API for NightShift runs
+  nightwatch_slack.py  → Formats + sends Slack DM with validation results
+
+thoughts/shared/       → Prose documentation (not code)
+  plans/               → Implementation plans + canonical roadmap (003_dashboard_roadmap.md)
+  research/            → Deep-dive investigations + Snowflake catalog
+  references/          → External source material (strategy docs, org context)
+  sessions/            → Saved session context for resuming work
+
+Data sources:
+  TECH_HEALTH (Snowflake) → Primary: PRs, deploys, CI, roster, oncall, AI tools
+  DX_ANALYTICS (Snowflake) → Self-service: API-ingested raw data (planned, see WS10)
+  GetDX (PostgreSQL)    → DXI scores, deploy freq, lead time, PR classification
+  dx-analytics-ingest/  → Separate repo for API→Snowflake ETL (planned, see WS10)
 ```
 
 ## Reports Convention
@@ -270,7 +308,17 @@ feature branch → staging → main
 - Trivial fixes (typos, comment changes) may skip staging at the user's discretion.
 - CI runs on PRs to both `main` and `staging`.
 
+## Night Shift Commit Restrictions
+
+Night Shift automations (nightwatch, nightagent) must **never** commit to `staging` or `main`:
+
+- **Nightagent** may only commit to `nightagent/*` feature branches and open **draft PRs** targeting staging. It must never merge, fast-forward, or push directly to `staging` or `main`. All merges require human approval.
+- **Nightwatch** is strictly read-only — no `git commit`, `git push`, or `git merge` on any branch.
+- The "Landing the Plane" rules below apply to **interactive sessions only**, not to Night Shift runs.
+
 ## Landing the Plane
+
+*Applies to interactive (human-driven) sessions only. Night Shift automations follow the commit restrictions above.*
 
 1. Run quality gates: `just lint && just build && just test`
 2. Update beads: `bd close` / `bd update` as needed
