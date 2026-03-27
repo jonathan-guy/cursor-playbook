@@ -1,0 +1,15 @@
+repos:
+  - repo: local
+    hooks:
+      - id: lint
+        name: Run ruff linter
+        entry: uv run ruff check .
+        language: system
+        pass_filenames: false
+        types: [python]
+
+      - id: no-env
+        name: Block .env commits
+        entry: bash -c 'echo "ERROR: .env files must not be committed" && exit 1'
+        language: system
+        files: ^\.env$

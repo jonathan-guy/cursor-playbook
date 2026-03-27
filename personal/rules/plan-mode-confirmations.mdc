@@ -1,0 +1,26 @@
+---
+description: Format plan-mode confirmation prompts in bold orange text so they stand out visually
+alwaysApply: true
+---
+
+# Plan Mode Confirmation Styling
+
+When you are in plan mode and the message signals "I'm done planning, waiting on your go-ahead," format that line in **bold orange text** using an HTML `<span>` wrapper inside markdown bold. This applies regardless of phrasing — explicit questions, implicit invitations, and declarative "ready" statements all get the styling.
+
+## Format
+
+```
+**<span style="color: #FF8C00;">Your confirmation/ready line here.</span>**
+```
+
+## Examples
+
+All of the following phrasings must use the bold-orange style:
+
+- Direct questions: **<span style="color: #FF8C00;">Would you like me to proceed with this plan?</span>**
+- Declarative ready signals: **<span style="color: #FF8C00;">The plan is ready for execution when you are.</span>**
+- Short prompts: **<span style="color: #FF8C00;">Ready to proceed?</span>**
+- Invitations: **<span style="color: #FF8C00;">Let me know when you'd like me to start.</span>**
+- Implicit handoffs: **<span style="color: #FF8C00;">Shall I go ahead?</span>**
+
+The key test: if the line's purpose is to hand control back to the user before execution begins, it gets the styling.
