@@ -21,16 +21,18 @@ Your job shifts from **doing the work** to **reviewing and directing AI-generate
 
 ## Automation Stack
 
-### Already Running (Nightshift)
+### Running (NightShift on Blox)
 
-| Component | When | What it does |
-|-----------|------|-------------|
-| **Nightwatch** | 2 AM | Validates all dashboard data (arithmetic, time-series, freshness, cross-report consistency). Sends Slack DM with results. |
-| **Nightagent** | 6 PM + 1 AM | Picks up backlog items, creates feature branches, opens draft PRs. Quality gates enforced. |
-| **Nightagent Brief** | 3 PM | Afternoon briefing: analyzes git activity, presents top backlog candidates, scopes tonight's work. |
-| **End-to-End Refresh** | Weekly (manual) | Full pipeline: sync all data, build dashboard, generate reports, publish everything. |
+All NightShift components run on ephemeral Blox (cloud) workstations provisioned via BuilderBot. GitHub Actions cron triggers `nightshift_trigger.py`, which calls the BuilderBot API. The workstation clones the repo, executes the skill, then self-destructs.
 
-### Built (Phase 4 Automation Stack)
+| Component | Skill | When | What it does |
+|-----------|-------|------|-------------|
+| **Nightwatch** | `/nightwatch` | 2 AM | 443 checks across 19 categories: arithmetic invariants, time-series health, cross-report consistency, golden headcount assertions. Sends Slack DM with results. |
+| **Nightagent** | `/nightagent` | 6 PM + 1 AM | Picks up backlog items (tagged `[nightagent-ready]`), creates `nightagent/*` feature branches, opens draft PRs. Quality gates enforced. |
+| **Nightagent Brief** | `/nightagent-brief` | 3 PM | Afternoon briefing: analyzes git activity, presents top backlog candidates, writes execution plan to `.nightagent-requests.md`. |
+| **End-to-End Refresh** | `/endtoend` | Weekly (manual) | Full pipeline: sync → lint → build → generate reports → test → publish. ~10 min. |
+
+### Built (Automation Stack)
 
 | Component | Script | When | What it does |
 |-----------|--------|------|-------------|
@@ -39,6 +41,8 @@ Your job shifts from **doing the work** to **reviewing and directing AI-generate
 | **Discovery Scanner** | `scripts/discovery_scanner.py` | Sunday overnight | Scans Snowflake INFORMATION_SCHEMA, scores new tables by DX relevance, sends Slack notification. |
 | **Weekly Draft + Honest Take** | `scripts/weekly_digest.py --save-draft` | Sunday overnight | Writes highlight draft to `data/weekly/` with WoW trends and an "Honest Take" section for private stakeholder notes. |
 | **Stakeholder Briefing** | `scripts/rachel_briefing.py` | After draft review | Reads approved draft (with honest-take), sends formatted Slack DM to stakeholder. |
+| **NightShift Trigger** | `scripts/nightshift_trigger.py` | GHA cron | Creates BuilderBot tasks. Supports `overnight`, `evening`, `wednesday-extras` modes. |
+| **Nightagent Executor** | `scripts/nightagent_executor.py` | Called by Goose | Wraps nightagent skill execution with logging and error handling. |
 
 All scripts support `--dry-run` for local testing. Wired into `scripts/nightshift.py` overnight schedule.
 

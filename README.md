@@ -1,6 +1,6 @@
 # Cursor IDE Configuration Playbook
 
-Personal reference for Cursor IDE configuration patterns, agent skills, and repo automation tricks developed on the [velocity-reporting](https://github.com/jonathan-guy) project (Q1 2026).
+Personal reference for Cursor IDE configuration patterns, agent skills, and repo automation tricks developed on the [velocity-reporting](https://github.com/jonathan-guy) project (Q1–Q2 2026).
 
 ## Architecture: Three-Tier Context Injection
 
@@ -35,6 +35,29 @@ See [`repo-examples/.cursor/rules/`](repo-examples/.cursor/rules/) for examples.
 
 Full workflow recipes invoked via slash commands or natural language. Not just context — step-by-step procedures with error handling, verification, and cleanup.
 
+The velocity-reporting project now has **16 repo-level skills**:
+
+| Skill | Slash Command | Archetype | What it does |
+|-------|--------------|-----------|-------------|
+| `endtoend` | `/endtoend` | Sequential pipeline | Full refresh: sync -> lint -> build -> generate reports -> test -> publish. ~10 min. |
+| `build-deploy` | `/build-deploy` | Multi-select + parallel | Presents AskQuestion site picker, launches all deploys in parallel Shell calls. |
+| `nightwatch` | `/nightwatch` | Validation suite | 443 data integrity checks across 19 categories. |
+| `nightagent` | `/nightagent` | Autonomous builder | Picks up backlog items, creates branches, opens draft PRs. |
+| `nightagent-brief` | `/nightagent-brief` | Interactive scoping | 3 PM briefing: analyzes git, presents candidates, writes execution plan. |
+| `nightshift` | `/nightshift` | Orchestrator | Manages the overnight automation system on ephemeral Blox workstations. |
+| `groom` | `/groom` | Interactive cleanup | Scans backlog for stale items, graduates done work, re-tiers. |
+| `promote` | `/promote` | Git workflow | Commit -> staging -> main -> push. Single confirmation. |
+| `promote-metric` | `/promote-metric` | Checklist | Wires a validated metric into a published output. |
+| `new-metric` | `/new-metric` | Structured intake | Vets upstream sources, checks duplicates, registers in catalog. |
+| `roadmap` | `/roadmap` | CRUD | Add/update/remove backlog items in the roadmap. |
+| `replan` | `/replan` | Plan revision | Diffs codebase against existing plan, edits plan in-place. |
+| `builderbot` | `/builderbot` | API integration | Creates tasks on BuilderBot for ephemeral Blox workstations. |
+| `banner` | `/banner` | Simple toggle | Shows/hides the dashboard update banner. |
+| `blurb` | `/blurb` | Content generation | Drafts exec-ready metric blurbs. |
+| `anythingelse` | `/anythingelse` | Catch-all | Handles unstructured requests with guided disambiguation. |
+
+**Skill archetypes:** The two most reusable patterns are (1) the **sequential pipeline** (`endtoend` — run steps in order, stop on failure) and (2) the **multi-select + parallel execution** (`build-deploy` — AskQuestion for site selection, then launch parallel Shell calls with `block_until_ms: 0`).
+
 ---
 
 ## Personal Cursor Environment (`~/.cursor/`)
@@ -48,6 +71,12 @@ Config that follows you across all projects.
 | [`questions`](personal/skills/questions/SKILL.md) | `/questions` | Forces agent to pause and ask 2-4 clarifying questions before acting | A "circuit breaker" that overrides the agent's default "just do it" behavior |
 | [`whisper`](personal/skills/whisper/SKILL.md) | `/whisper` | Transcribes audio via local Whisper (live dictation, voice memo, file) | Ships a `jargon.txt` priming file with domain-specific vocabulary — dramatically improves accuracy without fine-tuning |
 | [`glean`](personal/skills/glean/SKILL.md) | `/glean` | Queries company Glean AI (enterprise knowledge base) from terminal | Self-contained `uv run` script with PEP 723 inline deps — zero setup files needed |
+| `eng-ai-chat` | — | Searches internal company knowledge grounded in application context | MCP-backed: retrieves AI-generated summaries, dev guides, code search, Google Docs |
+| `gdrive` | — | Google Drive/Docs/Sheets/Slides: search, read, write, share, insert images | MCP-backed: full CRUD on Drive plus image insertion into Docs and Slides |
+| `go-link` | — | Resolves internal `go/` shortlinks to full URLs | Simple URL rewrite: `go/foo` → `https://go.sqprod.co/foo` |
+| `create-rule` | — | Creates `.cursor/rules/*.md` files with proper glob triggers | Meta-skill: guides agent through rule authoring conventions |
+| `create-skill` | — | Guides through SKILL.md authoring with best practices | Meta-skill: ensures consistent skill structure |
+| `update-cursor-settings` | — | Modifies Cursor/VSCode `settings.json` | Meta-skill: safe settings mutation with backup |
 
 ### Personal Rules
 
@@ -127,43 +156,6 @@ CI does `importlib.import_module()` on every report's `generate.py` — catches 
 
 ---
 
-## Autonomous Overnight System (NightShift)
-
-A three-phase daily cycle with human-in-the-loop checkpoints, running on ephemeral cloud workstations via GitHub Actions.
-
-| Time | Phase | Skill | Mode |
-|------|-------|-------|------|
-| 3 PM | **Briefing** | `/nightagent-brief` | Interactive — user picks up to 3 backlog items |
-| 6 PM | **Execution** | `/nightagent` | Autonomous — creates feature branches, opens draft PRs |
-| 2 AM | **Validation** | `/nightwatch` | Autonomous — 190+ data integrity checks |
-| 5 AM | **Notification** | Slack DM | Automated — sends results summary |
-| Thursday AM | **Grooming** | `/groom` | Interactive — processes nightwatch suggestions |
-
-### Architecture
-
-```
-GitHub Actions cron
-  -> nightshift_trigger.py (sparse checkout — only fetches this script)
-  -> BuilderBot API
-  -> ephemeral Blox workstation
-  -> Goose agent executes skill
-```
-
-### Safety Guardrails
-
-- **No briefing = forced read-only.** Without a completed briefing, all items are read-only (research only, no code changes).
-- **Commented-out code with markers.** Sync function additions are committed with `# --- NIGHTAGENT: Uncomment after verifying ---` markers.
-- **Draft PRs only.** Nightagent never merges — only opens draft PRs on feature branches.
-- **Manual approval.** BuilderBot tasks require human approval in the UI.
-- **Ephemeral contract file.** `.nightagent-requests.md` bridges briefing and execution phases, is gitignored (disposable).
-- **Sparse checkout in GHA.** Only fetches the trigger script, not the whole repo.
-
-### Self-Improving Documentation
-
-Nightwatch Step 5 reads agent transcripts, finds recurring errors, and proposes doc updates to `.cursor/rules/` and `AGENTS.md`. The system patches its own instructions based on observed failures.
-
----
-
 ## Research-Plan-Implement (RPI) Framework
 
 A structured methodology for AI-assisted development. The full 600-line playbook is at [`frameworks/rpi/PLAYBOOK.md`](frameworks/rpi/PLAYBOOK.md) with a reusable plan template at [`frameworks/rpi/PLAN-TEMPLATE.md`](frameworks/rpi/PLAN-TEMPLATE.md).
@@ -208,6 +200,46 @@ This pattern lets you mix personal skills with team-provided ones, and update th
 
 ---
 
+## Autonomous Overnight System (NightShift)
+
+A three-phase daily cycle with human-in-the-loop checkpoints, running on ephemeral cloud workstations via BuilderBot + Blox.
+
+| Time | Phase | Skill | Mode |
+|------|-------|-------|------|
+| 3 PM | **Briefing** | `/nightagent-brief` | Interactive — user picks up to 3 backlog items |
+| 6 PM | **Execution** | `/nightagent` | Autonomous — creates feature branches, opens draft PRs |
+| 2 AM | **Validation** | `/nightwatch` | Autonomous — 443 data integrity checks across 19 categories |
+| 5 AM | **Notification** | Slack DM | Automated — sends results summary |
+| Thursday AM | **Grooming** | `/groom` | Interactive — processes nightwatch suggestions |
+
+### Architecture
+
+```
+GitHub Actions cron (sparse checkout — only fetches trigger script)
+  → nightshift_trigger.py
+  → BuilderBot API (ephemeral Blox workstation)
+  → Goose agent executes skill
+```
+
+**BuilderBot integration:** The `nightshift_trigger.py` script creates tasks on BuilderBot, which provisions ephemeral Blox (cloud) workstations. The workstation clones the repo, runs the specified skill, then self-destructs. No persistent infrastructure.
+
+**Sparse checkout in GHA:** The GitHub Actions workflow only checks out `scripts/nightshift_trigger.py` and its deps — not the whole repo. This keeps the trigger fast and avoids credential exposure.
+
+### Safety Guardrails
+
+- **No briefing = forced read-only.** Without a completed briefing, all items are read-only (research only, no code changes).
+- **Commented-out code with markers.** Sync function additions are committed with `# --- NIGHTAGENT: Uncomment after verifying ---` markers.
+- **Draft PRs only.** Nightagent never merges — only opens draft PRs on `nightagent/*` feature branches.
+- **Manual approval.** BuilderBot tasks require human approval in the UI.
+- **Ephemeral contract file.** `.nightagent-requests.md` bridges briefing and execution phases, is gitignored (disposable).
+- **Branch restrictions.** Nightagent may only commit to `nightagent/*` branches. Nightwatch is strictly read-only.
+
+### Self-Improving Documentation
+
+Nightwatch Step 5 reads agent transcripts, finds recurring errors, and proposes doc updates to `.cursor/rules/` and `AGENTS.md`. The system patches its own instructions based on observed failures.
+
+---
+
 ## Patterns Worth Remembering
 
 1. **Glob-scoped rules as "just-in-time" context** — Scope domain knowledge to the files where it's needed instead of stuffing everything into one giant system prompt.
@@ -228,7 +260,17 @@ This pattern lets you mix personal skills with team-provided ones, and update th
 
 9. **`artifacts.yaml` as dependency graph** — `relates_to` and `feeds` fields create a machine-readable artifact map that auto-renders in a published visualization.
 
-10. **449 plan files as audit trail** — Every non-trivial agent task generates a `.plan.md` in `~/.cursor/plans/`. Useful for replaying decisions.
+10. **Plan files as cross-session handoffs** — `.cursor/plans/*.plan.md` files persist across sessions. Use them to hand off multi-step work between sessions, capturing state, decisions, and remaining steps.
+
+11. **AskQuestion for multi-select UIs** — The `AskQuestion` tool with `allow_multiple: true` creates a structured picker. Combine with parallel Shell calls for batch operations (see `build-deploy` skill).
+
+12. **Metric promotion lifecycle (catalog-first)** — Register metrics in `catalog/metrics.yaml` before writing queries. The 4-stage lifecycle (Discovered → Onboarded → Validated → Promoted) prevents metrics from reaching outputs without validation.
+
+13. **`[nightagent-ready]` tags in the backlog** — Tag backlog items with an inline spec (file paths, changes, acceptance criteria) so the autonomous builder can pick them up without ambiguity.
+
+14. **Golden assertions for data validation** — Manually maintained expected values (e.g., headcount by date) that nightwatch validates against. Catches silent data drift that statistical checks would miss.
+
+15. **Sparse checkout in GitHub Actions** — For trigger scripts that don't need the full repo, use sparse checkout to minimize clone size and avoid credential exposure.
 
 ---
 
@@ -239,6 +281,10 @@ frameworks/                            # Reusable development methodology
   rpi/
     PLAYBOOK.md                        # Research-Plan-Implement framework (600 lines)
     PLAN-TEMPLATE.md                   # Reusable implementation plan template
+  dx-analytics/
+    monorepo-structure.md              # Analytics monorepo folder structure pattern
+    metric-promotion-lifecycle.md      # 4-stage metric lifecycle framework
+    three-hour-day-playbook.md         # Three-hour day automation playbook
 
 personal/                              # ~/.cursor/ config (cross-project)
   rules/
@@ -269,4 +315,5 @@ repo-examples/                         # Repo-level config examples
       roadmap/SKILL.md                 # CRUD workflow skill
       groom/SKILL.md                   # Interactive grooming skill
       build-deploy/SKILL.md            # Multi-select build/deploy skill
+      endtoend/SKILL.md               # Sequential pipeline skill
 ```
