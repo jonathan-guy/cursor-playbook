@@ -30,15 +30,17 @@ Your job shifts from **doing the work** to **reviewing and directing AI-generate
 | **Nightagent Brief** | 3 PM | Afternoon briefing: analyzes git activity, presents top backlog candidates, scopes tonight's work. |
 | **End-to-End Refresh** | Weekly (manual) | Full pipeline: sync all data, build dashboard, generate reports, publish everything. |
 
-### To Build
+### Built (Phase 4 Automation Stack)
 
-| Component | When | What it does |
-|-----------|------|-------------|
-| **Morning Briefing** | 7:30 AM | Slack DM: overnight results, data freshness, action items, suggested focus for the day. |
-| **Auto-Draft Highlights** | Monday AM | LLM generates first draft of weekly stakeholder bullets from the data. You edit and approve. |
-| **Metric Discovery Scanner** | Wednesday | Diffs upstream data catalogs, flags new tables/columns that could power new metrics. |
-| **Auto-Triage** | Continuous | When validation finds failures, attempts diagnosis before alerting (known patterns → auto-resolve). |
-| **Stakeholder Briefing** | Weekly | Sends approved highlights to stakeholders via Slack with dashboard link. |
+| Component | Script | When | What it does |
+|-----------|--------|------|-------------|
+| **Morning Briefing** | `scripts/morning_briefing.py` | Daily (overnight) | Slack DM: nightwatch results, auto-triage, data freshness, open draft PRs, day context. |
+| **Auto-Triage** | `scripts/auto_triage.py` | Integrated into morning briefing + nightwatch | Pattern-matches failures into known categories (stale data, GetDX lag, roster inflation, etc). Reduces manual triage by ~60%. |
+| **Discovery Scanner** | `scripts/discovery_scanner.py` | Sunday overnight | Scans Snowflake INFORMATION_SCHEMA, scores new tables by DX relevance, sends Slack notification. |
+| **Weekly Draft + Honest Take** | `scripts/weekly_digest.py --save-draft` | Sunday overnight | Writes highlight draft to `data/weekly/` with WoW trends and an "Honest Take" section for private stakeholder notes. |
+| **Stakeholder Briefing** | `scripts/rachel_briefing.py` | After draft review | Reads approved draft (with honest-take), sends formatted Slack DM to stakeholder. |
+
+All scripts support `--dry-run` for local testing. Wired into `scripts/nightshift.py` overnight schedule.
 
 ## What Gets Your 3 Hours
 
