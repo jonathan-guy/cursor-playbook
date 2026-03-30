@@ -53,9 +53,9 @@ These render as full Chart.js charts within the exec summary item.
 | `locByAiAssisted` | Grouped bar: AI-assisted vs non-AI p50 LOC | `reports/loc_segmentation/output/data.json` |
 | `prsPerDeployTrend` | Dual-line: median vs avg PRs per deploy | `reports/pr_deploy_divergence/output/data.json` |
 | `tftAllEng` | Single-line: all-eng weighted feature PR throughput trend | `reports/feature_throughput_segmentation/output/data.json` |
-| `tftByBrand` | Multi-line: TFT per eng by brand (Cash App, CB, Square) | `reports/feature_throughput_segmentation/output/data.json` |
+| `tftByBrand` | Multi-line: TFT per eng by brand (Brand A, Brand B, Brand C) | `reports/feature_throughput_segmentation/output/data.json` |
 | `lttcByBrand` | Multi-line: median LTTC by brand | `reports/lead_time_segmentation/output/data.json` |
-| `tftByDisciplineSquare` | Multi-line: TFT per eng by discipline (Mobile/Server/Web) for Square | `reports/feature_throughput_segmentation/output/data.json` |
+| `tftByDisciplineBrandC` | Multi-line: TFT per eng by discipline (Mobile/Server/Web) for Brand C | `reports/feature_throughput_segmentation/output/data.json` |
 | `aiDauCodingSegments` | Stacked area: AI coding DAU segments (Daily/Near-Daily/Frequent/Occasional) | `dx-weekly-metrics.jsonc` → `aiDauSegmentsCoding` |
 
 ## Layout Options (`"chartLayout"`)

@@ -68,7 +68,7 @@ Playwright + node:test dashboard tests. Report pass/fail but do not block publis
 ./publish.sh
 ```
 
-Uploads `dx-executive-dashboard.html` to `https://blockcell.sqprod.co/sites/dx-executive-dashboard/`.
+Uploads `dx-executive-dashboard.html` to `https://hosting.example.com/sites/dx-executive-dashboard/`.
 
 If curl fails, remind the user to check WARP VPN.
 
@@ -89,7 +89,7 @@ cd reports/<module>/output \
   && zip -r /tmp/<site>.zip . \
   && curl -fsS -X POST -H "Accept: application/json" \
        -F "file=@/tmp/<site>.zip" \
-       "https://blockcell.sqprod.co/api/v1/sites/<site>/upload?force=true" \
+       "https://hosting.example.com/api/v1/sites/<site>/upload?force=true" \
   && rm /tmp/<site>.zip
 ```
 
@@ -109,10 +109,10 @@ Reports:    ✓ 7/7 generated (or X/7 with failures noted)
 Tests:      ✓ passed (or ✗ N failures — review before sharing)
 ────────────────────────────────────────
 Published:
-  Dashboard:                https://blockcell.sqprod.co/sites/dx-executive-dashboard/
-  LOC Segmentation:         https://blockcell.sqprod.co/sites/vr-loc-segmentation/
-  Velocity Segmentation:    https://blockcell.sqprod.co/sites/velocity-segmentation-deepdive/
-  Signal Deck:              https://blockcell.sqprod.co/sites/signal-deck/
+  Dashboard:                https://hosting.example.com/sites/dx-executive-dashboard/
+  LOC Segmentation:         https://hosting.example.com/sites/vr-loc-segmentation/
+  Velocity Segmentation:    https://hosting.example.com/sites/velocity-segmentation-deepdive/
+  Signal Deck:              https://hosting.example.com/sites/signal-deck/
 ```
 
 ## Error Handling

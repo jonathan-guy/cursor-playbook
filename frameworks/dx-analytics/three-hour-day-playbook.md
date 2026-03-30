@@ -10,57 +10,86 @@ Your job shifts from **doing the work** to **reviewing and directing AI-generate
 
 | Time | Activity | Duration | Mode |
 |------|----------|----------|------|
-| 7:30 AM | Morning briefing arrives in Slack | — | Auto |
-| 8:00 AM | Review briefing, triage alerts, approve/reject overnight PRs | 30 min | Human |
+| 6:00 AM | Morning briefing arrives in Slack (local launchd trigger) | — | Auto |
+| 8:00 AM | Review briefing, run `/dawn-patrol` to review/merge nightagent branches | 30 min | Human |
 | 9:00 AM | Deep work: one focused task (analysis, insight writing, stakeholder prep) | 90 min | Human |
-| 3:00 PM | Afternoon brief: scope tonight's automated work | 30 min | Human |
-| 5:00 PM | Quick review: check mid-day results, merge approved PRs | 30 min | Human |
-| 6 PM–2 AM | Overnight automation: validation + autonomous builder | — | Auto |
+| 9 AM–5 PM | On-demand dispatch: `/delegate` sends self-contained tasks to cloud anytime | — | Human + Auto |
+| 3:00 PM | Afternoon brief: scope tonight's automated work via `/nightagent-brief` | 30 min | Human |
+| 5:00 PM | NightShift triggers: validation + nightagent + doc maintenance (single cloud task) | — | Auto |
+| Wed 5 PM | Metric discovery: scan data warehouse for new tables, update catalogs | — | Auto |
 
 **Total human time: ~3 hours.** Weekends and holidays: morning briefing only (5 min review).
 
 ## Automation Stack
 
-### Running (NightShift on Blox)
+### NightShift Orchestrator
 
-All NightShift components run on ephemeral Blox (cloud) workstations provisioned via BuilderBot. GitHub Actions cron triggers `nightshift_trigger.py`, which calls the BuilderBot API. The workstation clones the repo, executes the skill, then self-destructs.
+All NightShift modes run on ephemeral cloud workstations. Local launchd plists trigger `nightshift_trigger.py`, which calls the cloud workstation API. The workstation clones the repo, executes the scheduled work, then self-destructs.
 
-| Component | Skill | When | What it does |
-|-----------|-------|------|-------------|
-| **Nightwatch** | `/nightwatch` | 2 AM | 443 checks across 19 categories: arithmetic invariants, time-series health, cross-report consistency, golden headcount assertions. Sends Slack DM with results. |
-| **Nightagent** | `/nightagent` | 6 PM + 1 AM | Picks up backlog items (tagged `[nightagent-ready]`), creates `nightagent/*` feature branches, opens draft PRs. Quality gates enforced. |
-| **Nightagent Brief** | `/nightagent-brief` | 3 PM | Afternoon briefing: analyzes git activity, presents top backlog candidates, writes execution plan to `.nightagent-requests.md`. |
-| **End-to-End Refresh** | `/endtoend` | Weekly (manual) | Full pipeline: sync → lint → build → generate reports → test → publish. ~10 min. |
+| Mode | Schedule | What it does |
+|------|----------|-------------|
+| `overnight` | Daily 5 PM | Validation + Slack DM + doc maintenance + morning briefing prep + nightagent execution |
+| `evening` | Daily 9 PM | Lightweight: support dashboard refresh only |
+| `thursday-extras` | Thu 5 PM | Full overnight + metric discovery (full mode) |
+| `report-refresh` | On demand | Regenerate and deploy all reports |
+| `monthly-summary` | Monthly | Generate monthly trend summary |
+| `weekly-digest` | Weekly | Auto-draft weekly highlights for stakeholder |
+| `dispatch` | On demand | Execute tasks from `.nightagent-requests.md` immediately |
 
-### Built (Automation Stack)
+### Component Skills
 
-| Component | Script | When | What it does |
-|-----------|--------|------|-------------|
-| **Morning Briefing** | `scripts/morning_briefing.py` | Daily (overnight) | Slack DM: nightwatch results, auto-triage, data freshness, open draft PRs, day context. |
-| **Auto-Triage** | `scripts/auto_triage.py` | Integrated into morning briefing + nightwatch | Pattern-matches failures into known categories (stale data, GetDX lag, roster inflation, etc). Reduces manual triage by ~60%. |
-| **Discovery Scanner** | `scripts/discovery_scanner.py` | Sunday overnight | Scans Snowflake INFORMATION_SCHEMA, scores new tables by DX relevance, sends Slack notification. |
-| **Weekly Draft + Honest Take** | `scripts/weekly_digest.py --save-draft` | Sunday overnight | Writes highlight draft to `data/weekly/` with WoW trends and an "Honest Take" section for private stakeholder notes. |
-| **Stakeholder Briefing** | `scripts/rachel_briefing.py` | After draft review | Reads approved draft (with honest-take), sends formatted Slack DM to stakeholder. |
-| **NightShift Trigger** | `scripts/nightshift_trigger.py` | GHA cron | Creates BuilderBot tasks. Supports `overnight`, `evening`, `wednesday-extras` modes. |
-| **Nightagent Executor** | `scripts/nightagent_executor.py` | Called by Goose | Wraps nightagent skill execution with logging and error handling. |
+| Component | Skill | What it does |
+|-----------|-------|-------------|
+| **Nightwatch** | `/nightwatch` | 443+ checks across 19 categories: arithmetic invariants, time-series health, cross-report consistency, golden assertions. |
+| **Nightagent** | `/nightagent` | Picks up backlog items (tagged `[nightagent-ready]`), creates `nightagent/*` feature branches, runs quality gates. |
+| **Nightagent Brief** | `/nightagent-brief` | Afternoon briefing: analyzes git activity, presents top backlog candidates, writes execution plan. |
+| **Dawn Patrol** | `/dawn-patrol` | Morning review: walks through unmerged nightagent branches with accept/edit/skip/reject options. |
+| **End-to-End Refresh** | `/endtoend` | Full pipeline: sync → lint → build → generate reports → test → publish. ~10 min. |
+| **Delegate** | `/delegate` | Converts freeform ideas to nightagent specs, dispatches immediately or queues for tonight. |
 
-All scripts support `--dry-run` for local testing. Wired into `scripts/nightshift.py` overnight schedule.
+### Supporting Scripts
+
+| Script | When | What it does |
+|--------|------|-------------|
+| `morning_briefing.py` | Daily (overnight) | Slack DM: nightwatch results, data freshness, nightagent summaries, suggested actions. |
+| `doc_maintenance.py` | Daily (overnight) | Checks artifact freshness, catalog consistency, stale dates. Queues fixes for nightagent. |
+| `metric_discovery.py` | Weekly (Wed/Sun) | Scans data warehouse INFORMATION_SCHEMA, scores new tables by relevance, surfaces onboarding opportunities. |
+| `weekly_digest.py` | Weekly | Auto-drafts highlights with WoW trends for stakeholder review. |
+| `nightshift_trigger.py` | Scheduled (launchd) | Creates cloud workstation tasks via API. Supports all NightShift modes. |
+| `nightagent_executor.py` | Called by agent | Wraps nightagent execution with logging, credential loading, and error handling. |
+
+### Time-Conditional Rules
+
+Two `.cursor/rules/` files encode the daily rhythm so the agent auto-triggers the right workflow:
+
+| Rule | Window | Effect |
+|------|--------|--------|
+| `morning-briefing.md` | 7–11 AM | Auto-runs validation + overnight status briefing on first session of the day |
+| `nightagent-briefing-reminder.md` | 2–6 PM | Auto-starts the afternoon briefing if not already done today |
 
 ## What Gets Your 3 Hours
 
-The human hours are spent on:
-
-1. **Morning review (30 min):** Read the briefing. Approve or reject nightagent PRs. Flag anything urgent.
+1. **Morning review (30 min):** Read the briefing. Run `/dawn-patrol` to review nightagent branches. Approve or reject. Flag anything urgent.
 2. **Deep work (90 min):** One task that requires judgment — writing insights, designing a new analysis, preparing for a stakeholder conversation. AI drafts the starting point; you refine.
-3. **Afternoon scoping (30 min):** Review the nightagent brief. Decide what gets built tonight. Add context or constraints.
-4. **End-of-day review (30 min):** Check that automated outputs look right. Merge what's good.
+3. **Afternoon scoping (30 min):** Review the nightagent brief. Decide what gets built tonight. Dispatch urgent items immediately via `/delegate`.
+
+## Daytime Dispatch
+
+Cloud dispatch isn't limited to the overnight window. Throughout the day:
+
+- **`/delegate`** converts any in-session idea to a spec, then dispatches to a cloud workstation immediately or queues for tonight.
+- **`just dispatch-endtoend`** runs the full pipeline refresh on cloud (~10 min, doesn't block your terminal).
+- **`just dispatch-build --sites <keys>`** builds and deploys specific reports on cloud.
+- Dispatched tasks are marked `<!-- dispatched -->` in `.nightagent-requests.md` so the 5 PM NightShift skips them automatically.
 
 ## Key Design Decisions
 
 - **Drafts, not finals.** Automation produces drafts that you review. Nothing reaches stakeholders without your approval.
-- **Quality gates are non-negotiable.** Every automated change runs lint, build, and test. Failures block the PR.
-- **Nightagent never merges.** It opens draft PRs only. You merge after review.
+- **Quality gates are non-negotiable.** Every automated change runs lint, build, and test. Failures block the merge.
+- **Nightagent never merges.** It pushes to `nightagent/*` feature branches. You merge after review via dawn patrol.
 - **One deep-work task per day.** Context-switching is the enemy. Pick one thing for your 90-minute block and protect it.
+- **Voice-to-nightagent pipeline.** `Cmd+Shift+F` records voice → Whisper transcribes → appended to quick-fixes file → nightagent picks it up at 3 PM. Fix bugs by talking.
+- **Self-improving documentation.** Nightwatch reads agent transcripts, finds recurring errors, and proposes doc updates. The system patches its own instructions.
 
 ## Adapting for a Team
 

@@ -55,7 +55,7 @@ The metric appears in one or more published outputs (executive dashboard, deep-d
   source: snowflake | getdx | github_api | sheets | cross_source | blockcell
   query: queries/file_name.sql        # null for discovered
   promoted_to: []                      # list of output IDs from artifacts.yaml
-  owner: jguy
+  owner: yourname
   direction: higher | lower | neutral
   grain: weekly | daily | monthly
   entity: per_engineer | per_service | per_team | aggregate

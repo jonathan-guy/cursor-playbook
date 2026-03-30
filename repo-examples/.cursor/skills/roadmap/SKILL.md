@@ -70,12 +70,12 @@ After editing, show the user:
 ## Step 6: Regenerate and deploy the roadmap view
 
 ```bash
-cd /Users/jguy/velocity-reporting && \
+cd /path/to/project && \
   uv run python -m reports.roadmap_view.generate 2>&1 && \
   just publish-report roadmap_view 2>&1
 ```
 
 Confirm success by checking for exit code 0 and reporting the published URL:
-`https://blockcell.sqprod.co/sites/signal-deck/`
+`https://hosting.example.com/sites/signal-deck/`
 
 Do **not** commit. Leave changes uncommitted for the user to review.

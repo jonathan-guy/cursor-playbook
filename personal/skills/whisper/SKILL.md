@@ -12,9 +12,12 @@ All scripts auto-load domain jargon from `~/.cursor/skills/whisper/jargon.txt` v
 
 | Script | Purpose | Shortcut |
 |--------|---------|----------|
-| `dictate.sh` | Live mic → clipboard | `Cmd+Shift+D` |
+| `dictate.sh` | Live mic → clipboard → paste into chat | `Cmd+Shift+D` |
+| `dictate-fix.sh` | Live mic → append to `.nightagent-quick-fixes.md` | `Cmd+Shift+F` |
+| `voice-agent.sh` | Conversational loop: speak → Claude responds aloud | -- |
 | `instruct.sh` | Voice memo file → clipboard instruction | -- |
 | `transcribe.sh` | Audio file → transcript (txt/srt) | -- |
+| `update_jargon.sh` | Auto-update jargon from project catalogs | -- |
 
 All scripts live in `~/.cursor/skills/whisper/scripts/`.
 
@@ -23,12 +26,45 @@ All scripts live in `~/.cursor/skills/whisper/scripts/`.
 Keybinding is set in Cursor. Requires terminal to be visible.
 
 1. Press `Cmd+Shift+D`
-2. Speak into mic
-3. Press `Enter` to stop
+2. Speak into mic (pauses are fine — take your time)
+3. Press `Enter` when done
 4. Text is transcribed and copied to clipboard
-5. `Cmd+V` to paste into Cursor chat
+5. Auto-pasted into Cursor chat
 
-Options: `bash dictate.sh --model turbo` or `bash dictate.sh --no-jargon`
+Options: `bash dictate.sh --model small` (faster model), `bash dictate.sh --no-jargon`
+
+## 1b. Quick Fix Dictation (Cmd+Shift+F)
+
+Queue a nightagent task by voice — no file editing needed.
+
+1. Press `Cmd+Shift+F`
+2. Speak your fix ("Signal Deck make all tab font sizes 14px")
+3. Press `Enter` when done
+4. Transcript is appended to `.nightagent-quick-fixes.md`
+5. Nightagent picks it up at the 3 PM briefing
+
+## 1c. Voice Agent (Conversational)
+
+Talk to Claude hands-free in a loop — for driving, walking, or thinking out loud. Whisper transcribes
+your speech, Claude responds via the Anthropic API, and macOS TTS reads the response aloud.
+
+```bash
+bash ~/.cursor/skills/whisper/scripts/voice-agent.sh
+```
+
+1. Speak into mic, press `Enter` when done
+2. Whisper transcribes, Claude thinks, TTS reads the response
+3. Repeat — conversation history is maintained across turns
+4. Say "goodbye" or press `Ctrl+C` to exit
+
+Options:
+- `--voice Samantha` (default) — change TTS voice (try `Reed`, `Flo`, `Shelley`)
+- `--reset` — clear conversation history and start fresh
+- `--no-jargon` — skip domain jargon priming
+
+Conversation history is saved to `/tmp/voice-agent-history.json` between sessions.
+
+**Dependencies:** `anthropic` Python package (installed in `~/whisper-env`).
 
 ## 2. Voice Memo → Instruction
 
@@ -51,9 +87,10 @@ bash ~/.cursor/skills/whisper/scripts/transcribe.sh ~/recording.mp3
 
 Domain terms are stored in `~/.cursor/skills/whisper/jargon.txt`. This file is automatically
 passed as `--initial_prompt` to every transcription, improving accuracy for project-specific
-vocabulary (Blockcell, LTTC, GetDX, DORA, TFT, DXI, etc.).
+vocabulary.
 
-To update jargon: edit `~/.cursor/skills/whisper/jargon.txt` directly.
+To update jargon manually: edit `~/.cursor/skills/whisper/jargon.txt` directly.
+To auto-update from project catalogs: `bash ~/.cursor/skills/whisper/scripts/update_jargon.sh`
 To skip jargon for a run: add `--no-jargon` to any script.
 
 ## Quick Transcribe (inline)
@@ -69,8 +106,8 @@ cat /tmp/whisper-out/*.txt
 
 | Model | Speed | Quality | Use when |
 |-------|-------|---------|----------|
-| `turbo` | Fast | High | Default for file transcription |
-| `small` | Faster | Good | Default for live dictation, short clips |
+| `turbo` | Fast | High | Default for live dictation and file transcription |
+| `small` | Faster | Good | Short clips, quick notes |
 | `medium` | Moderate | Better | Accented speech, important recordings |
 | `large-v3` | Slow | Best | Noisy audio, maximum accuracy |
 | `tiny` | Fastest | Fair | Bulk batch jobs |

@@ -64,8 +64,8 @@ Launch **every** selected site simultaneously using separate Shell tool calls, e
 
 **Build & Deploy:**
 ```bash
-cd /Users/jguy/velocity-reporting && \
-  export PATH="/Users/jguy/Library/nodejs/nodejs-24.13.1-block-2024/bin:$PATH" && \
+cd /path/to/project && \
+  export PATH="$HOME/.hermit/bin:$PATH" && \
   npx esbuild src/main.ts --bundle --format=iife --outfile=dist/dashboard.js 2>&1 && \
   uv run build 2>&1 && \
   ./publish.sh 2>&1
@@ -73,12 +73,12 @@ cd /Users/jguy/velocity-reporting && \
 
 **Deploy Only:**
 ```bash
-cd /Users/jguy/velocity-reporting && ./publish.sh 2>&1
+cd /path/to/project && ./publish.sh 2>&1
 ```
 
 **Staging deploy** (when user asks for staging):
 ```bash
-cd /Users/jguy/velocity-reporting && ./publish.sh dx-executive-dashboard-staging 2>&1
+cd /path/to/project && ./publish.sh dx-executive-dashboard-staging 2>&1
 ```
 
 ### Report commands (all other keys)
@@ -87,7 +87,7 @@ Substitute `{MODULE}` and `{SITE}` from the registry.
 
 **Build & Deploy:**
 ```bash
-cd /Users/jguy/velocity-reporting && \
+cd /path/to/project && \
   set -a && source .env 2>/dev/null; set +a && \
   uv run python -m reports.{MODULE}.generate 2>&1 && \
   ./publish.sh {SITE} reports/{MODULE}/output 2>&1
@@ -95,7 +95,7 @@ cd /Users/jguy/velocity-reporting && \
 
 **Deploy Only:**
 ```bash
-cd /Users/jguy/velocity-reporting && \
+cd /path/to/project && \
   ./publish.sh {SITE} reports/{MODULE}/output 2>&1
 ```
 
@@ -105,7 +105,7 @@ After all commands finish (poll terminal files), confirm each has exit code 0. S
 
 | Site | Status | URL |
 |------|--------|-----|
-| ... | pass/fail | `https://blockcell.sqprod.co/sites/{SITE}/` |
+| ... | pass/fail | `https://hosting.example.com/sites/{SITE}/` |
 
 ## Troubleshooting
 

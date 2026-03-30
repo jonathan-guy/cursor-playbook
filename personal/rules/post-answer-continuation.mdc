@@ -1,0 +1,51 @@
+---
+description: After receiving any answer to an AskQuestion prompt, immediately continue the workflow — never stall or stop
+alwaysApply: true
+---
+
+# Post-Answer Continuation (Never Stall)
+
+**CRITICAL: After receiving ANY answer to an AskQuestion prompt — clicked or typed — you MUST immediately continue the workflow. Never stop. Never just acknowledge the answer. Never wait for additional confirmation.**
+
+This is the single most important rule in this file. If you do nothing else, do this: receive answer → take the next action.
+
+## Anti-Patterns (Never Do These)
+
+- **Acknowledge and stop.** "Got it, I'll proceed with option A." *[end of message, no action taken]* — This is the failure mode. The user answered your question so you could act, not so you could confirm you heard them.
+- **Restate and wait.** "So you want X and Y. Let me know when you're ready." — They already told you. Go.
+- **Ask a follow-up question that was answerable from context.** If the user's answer gives you everything you need, do not manufacture another question to delay.
+- **Present the plan again after the user already approved it.** If they said "proceed," execute. Don't re-summarize.
+
+## What "Continue the Workflow" Means
+
+After receiving an answer:
+
+1. **If the answer maps to an action** (e.g., "Proceed", "Build it", "Option A") → perform that action immediately in the same response.
+2. **If the answer requires a plan first** (e.g., "Adjust the plan") → present the adjusted plan and offer new confirmation options.
+3. **If the answer is ambiguous** → ask ONE short clarification, then act on the response.
+4. **If the answer is a rejection** (e.g., "Cancel", "Never mind") → acknowledge briefly and offer what to do instead.
+
+In all cases, the response must end with either (a) work being done or (b) a concrete next step presented to the user. Never end with a dead stop.
+
+## Interpreting Free-Text Answers
+
+When a skill presents AskQuestion with structured options and the user replies with free text instead of clicking:
+
+1. **Map prose to options.** Infer which option(s) the user meant from keywords, synonyms, and intent — not exact labels. Examples: "yeah do it" → proceed; "just the dashboard" → the dashboard option; "nah stop" → cancel.
+2. **Confirm in one line, then act.** "Got it — building the dashboard only." Then immediately do it. The one-line confirmation is not a stopping point.
+3. **Ambiguous free text.** If the response plausibly maps to multiple meaningfully different actions, ask a short clarification. Otherwise, pick the most likely interpretation and go.
+
+## Handling Interruptions (Out-of-Band Messages)
+
+If the user's message after an AskQuestion is clearly a different request — not an answer to the pending question:
+
+1. Handle the new request first. Do not block or force the user back to the pending question.
+2. After the interrupting request is resolved, resurface the original question with a brief reminder: "By the way, you kicked off [skill] earlier — still want to [action]?"
+3. Re-present the pending choices so the user can answer without scrolling back.
+4. If the user ignores the resurface or says "never mind," drop it.
+
+## General
+
+- AskQuestion with structured options remains the primary UX — always present clickable options first.
+- Free-text interpretation is the fallback, not a replacement.
+- Every response after receiving user input must either do work or present clear next steps. **A dead-end response with no action and no offered next step is always wrong.**
